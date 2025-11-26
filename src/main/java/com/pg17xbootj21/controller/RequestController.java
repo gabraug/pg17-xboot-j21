@@ -5,6 +5,13 @@ import com.pg17xbootj21.model.Request;
 import com.pg17xbootj21.service.AuthService;
 import com.pg17xbootj21.service.RequestService;
 import com.pg17xbootj21.service.SessionService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +23,8 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/requests")
+@Tag(name = "Solicitações", description = "Endpoints para gerenciamento de solicitações de acesso a módulos")
+@SecurityRequirement(name = "Bearer Authentication")
 public class RequestController {
 
     private final RequestService requestService;
@@ -28,6 +37,15 @@ public class RequestController {
         this.sessionService = sessionService;
     }
 
+    @Operation(summary = "Criar nova solicitação", description = "Cria uma nova solicitação de acesso a módulos")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Solicitação criada com sucesso",
+                content = @Content(schema = @Schema(implementation = CreateRequestResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Dados inválidos ou solicitação negada",
+                content = @Content(schema = @Schema(implementation = CreateRequestResponse.class))),
+        @ApiResponse(responseCode = "401", description = "Token inválido ou expirado",
+                content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @PostMapping
     public ResponseEntity<?> createRequest(
             @RequestHeader(value = "Authorization", required = false) String authorization,
@@ -107,6 +125,13 @@ public class RequestController {
         }
     }
 
+    @Operation(summary = "Buscar solicitações", description = "Lista as solicitações do usuário autenticado com filtros opcionais")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Lista de solicitações retornada com sucesso",
+                content = @Content(schema = @Schema(implementation = PagedResponse.class))),
+        @ApiResponse(responseCode = "401", description = "Token inválido ou expirado",
+                content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @GetMapping
     public ResponseEntity<?> searchRequests(
             @RequestHeader(value = "Authorization", required = false) String authorization,
@@ -213,6 +238,15 @@ public class RequestController {
         }
     }
 
+    @Operation(summary = "Obter detalhes da solicitação", description = "Retorna os detalhes completos de uma solicitação específica")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Detalhes da solicitação retornados com sucesso",
+                content = @Content(schema = @Schema(implementation = RequestDetailsResponse.class))),
+        @ApiResponse(responseCode = "404", description = "Solicitação não encontrada",
+                content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "401", description = "Token inválido ou expirado",
+                content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @GetMapping("/{protocol}")
     public ResponseEntity<?> getRequestDetails(
             @RequestHeader(value = "Authorization", required = false) String authorization,
@@ -279,6 +313,15 @@ public class RequestController {
         }
     }
 
+    @Operation(summary = "Renovar acesso", description = "Renova o acesso a módulos quando faltam menos de 30 dias para expiração")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Acesso renovado com sucesso",
+                content = @Content(schema = @Schema(implementation = CreateRequestResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Não é possível renovar o acesso",
+                content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "401", description = "Token inválido ou expirado",
+                content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @PostMapping("/renew")
     public ResponseEntity<?> renewAccess(
             @RequestHeader(value = "Authorization", required = false) String authorization,
@@ -336,6 +379,15 @@ public class RequestController {
         }
     }
 
+    @Operation(summary = "Cancelar solicitação", description = "Cancela uma solicitação ativa do usuário autenticado")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Solicitação cancelada com sucesso",
+                content = @Content(schema = @Schema(implementation = RequestDetailsResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Não é possível cancelar a solicitação",
+                content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "401", description = "Token inválido ou expirado",
+                content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @PostMapping("/{protocol}/cancel")
     public ResponseEntity<?> cancelRequest(
             @RequestHeader(value = "Authorization", required = false) String authorization,

@@ -19,7 +19,8 @@ public class SecurityConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(securityInterceptor)
                 .addPathPatterns("/**")
-                .excludePathPatterns("/auth/login", "/api/uptime", "/error");
+                .excludePathPatterns("/auth/login", "/api/uptime", "/error", 
+                        "/swagger-ui/**", "/swagger-ui.html", "/api-docs/**", "/v3/api-docs/**");
     }
 
     @Override

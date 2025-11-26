@@ -5,6 +5,12 @@ import com.pg17xbootj21.dto.LoginRequest;
 import com.pg17xbootj21.dto.LoginResponse;
 import com.pg17xbootj21.model.User;
 import com.pg17xbootj21.service.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/auth")
+@Tag(name = "Autenticação", description = "Endpoints para autenticação de usuários")
 public class AuthController {
 
     private final AuthService authService;
@@ -23,6 +30,13 @@ public class AuthController {
         this.authService = authService;
     }
 
+    @Operation(summary = "Realizar login", description = "Autentica um usuário e retorna um token de acesso")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Login realizado com sucesso",
+                content = @Content(schema = @Schema(implementation = LoginResponse.class))),
+        @ApiResponse(responseCode = "401", description = "Email ou senha inválidos",
+                content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         try {

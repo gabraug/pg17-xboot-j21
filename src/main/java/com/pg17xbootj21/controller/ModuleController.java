@@ -5,6 +5,13 @@ import com.pg17xbootj21.dto.ModuleResponse;
 import com.pg17xbootj21.model.Module;
 import com.pg17xbootj21.service.ModuleService;
 import com.pg17xbootj21.service.SessionService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +22,8 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/modules")
+@Tag(name = "Módulos", description = "Endpoints para consulta de módulos disponíveis")
+@SecurityRequirement(name = "Bearer Authentication")
 public class ModuleController {
 
     private final ModuleService moduleService;
@@ -25,6 +34,13 @@ public class ModuleController {
         this.sessionService = sessionService;
     }
 
+    @Operation(summary = "Listar módulos disponíveis", description = "Retorna a lista completa de módulos disponíveis no sistema")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Lista de módulos retornada com sucesso",
+                content = @Content(schema = @Schema(implementation = ModuleResponse.class))),
+        @ApiResponse(responseCode = "401", description = "Token inválido ou expirado",
+                content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @GetMapping
     public ResponseEntity<?> listModules(@RequestHeader(value = "Authorization", required = false) String authorization) {
         String token = extractToken(authorization);

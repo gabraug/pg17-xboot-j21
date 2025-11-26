@@ -52,6 +52,10 @@ public class SecurityInterceptor implements HandlerInterceptor {
     private boolean isPublicEndpoint(String path) {
         return path.equals("/auth/login") || 
                path.startsWith("/api/uptime") ||
+               path.startsWith("/swagger-ui") ||
+               path.startsWith("/swagger-ui.html") ||
+               path.startsWith("/api-docs") ||
+               path.startsWith("/v3/api-docs") ||
                path.equals("/error");
     }
 
