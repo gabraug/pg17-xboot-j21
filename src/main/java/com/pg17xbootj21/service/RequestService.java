@@ -132,6 +132,13 @@ public class RequestService {
         return objectMapper.readValue(file, new TypeReference<List<Request>>() {});
     }
 
+    public Request findRequestByProtocol(String userId, String protocol) throws IOException {
+        return getAllRequests().stream()
+                .filter(req -> req.getProtocol().equals(protocol) && req.getUserId().equals(userId))
+                .findFirst()
+                .orElse(null);
+    }
+
     private void saveRequest(Request request) throws IOException {
         List<Request> requests = getAllRequests();
         requests.add(request);

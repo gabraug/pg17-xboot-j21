@@ -147,6 +147,54 @@ public class RequestController {
         }
     }
 
+    @GetMapping("/{protocol}")
+    public ResponseEntity<?> getRequestDetails(
+            @RequestHeader("Authorization") String authorization,
+            @PathVariable String protocol) {
+        
+        String token = extractToken(authorization);
+        if (token == null || !sessionService.isValidSession(token)) {
+            ErrorResponse error = new ErrorResponse(
+                "Unauthorized",
+                "Invalid or expired token",
+                HttpStatus.UNAUTHORIZED.value()
+            );
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        }
+
+        String userId = authService.getUserIdByToken(token);
+        if (userId == null) {
+            ErrorResponse error = new ErrorResponse(
+                "Unauthorized",
+                "User not found",
+                HttpStatus.UNAUTHORIZED.value()
+            );
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        }
+
+        try {
+            Request request = requestService.findRequestByProtocol(userId, protocol);
+            if (request == null) {
+                ErrorResponse error = new ErrorResponse(
+                    "Not Found",
+                    "Request not found",
+                    HttpStatus.NOT_FOUND.value()
+                );
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            }
+
+            RequestDetailsResponse response = toDetails(request);
+            return ResponseEntity.ok(response);
+        } catch (IOException e) {
+            ErrorResponse error = new ErrorResponse(
+                "Internal Server Error",
+                e.getMessage(),
+                HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
     private RequestSummaryResponse toSummary(Request request) {
         RequestSummaryResponse summary = new RequestSummaryResponse();
         summary.setProtocol(request.getProtocol());
@@ -158,6 +206,22 @@ public class RequestController {
         summary.setExpiresAt(request.getExpiresAt());
         summary.setDenialReason(request.getDenialReason());
         return summary;
+    }
+
+    private RequestDetailsResponse toDetails(Request request) {
+        RequestDetailsResponse details = new RequestDetailsResponse();
+        details.setProtocol(request.getProtocol());
+        details.setUserId(request.getUserId());
+        details.setUserDepartment(request.getUserDepartment());
+        details.setModules(request.getModules());
+        details.setJustification(request.getJustification());
+        details.setUrgent(request.isUrgent());
+        details.setStatus(request.getStatus());
+        details.setCreatedAt(request.getCreatedAt());
+        details.setExpiresAt(request.getExpiresAt());
+        details.setDenialReason(request.getDenialReason());
+        details.setHistory(request.getHistory());
+        return details;
     }
 
     private String extractToken(String authorization) {
