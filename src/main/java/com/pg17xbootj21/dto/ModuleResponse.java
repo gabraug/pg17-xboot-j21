@@ -1,24 +1,15 @@
-package com.pg17xbootj21.model;
+package com.pg17xbootj21.dto;
 
 import java.util.List;
 
-public class Module {
-    private String id;
+public class ModuleResponse {
     private String name;
     private String description;
     private List<String> allowedDepartments;
-    private List<String> incompatibleModules;
     private boolean active;
+    private List<String> incompatibleModules;
 
-    public Module() {
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
+    public ModuleResponse() {
     }
 
     public String getName() {
@@ -45,20 +36,20 @@ public class Module {
         this.allowedDepartments = allowedDepartments;
     }
 
-    public List<String> getIncompatibleModules() {
-        return incompatibleModules;
-    }
-
-    public void setIncompatibleModules(List<String> incompatibleModules) {
-        this.incompatibleModules = incompatibleModules;
-    }
-
     public boolean isActive() {
         return active;
     }
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public List<String> getIncompatibleModules() {
+        return incompatibleModules;
+    }
+
+    public void setIncompatibleModules(List<String> incompatibleModules) {
+        this.incompatibleModules = incompatibleModules;
     }
 }
 
