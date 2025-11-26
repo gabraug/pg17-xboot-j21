@@ -139,6 +139,40 @@ public class RequestService {
                 .orElse(null);
     }
 
+    public Request cancelRequest(String userId, String protocol, String reason) throws IOException {
+        Request request = findRequestByProtocol(userId, protocol);
+        if (request == null) {
+            throw new RuntimeException("Request not found");
+        }
+
+        if (!"ATIVO".equals(request.getStatus())) {
+            throw new RuntimeException("Only requests with ATIVO status can be cancelled");
+        }
+
+        String cancelledAt = Instant.now().toString();
+        request.setStatus("CANCELADO");
+
+        Request.HistoryEntry historyEntry = createHistoryEntry(cancelledAt, "CANCELLED: " + reason);
+        request.getHistory().add(historyEntry);
+
+        updateRequest(request);
+        revokeAccessesByProtocol(userId, protocol);
+
+        return request;
+    }
+
+    private void revokeAccessesByProtocol(String userId, String protocol) throws IOException {
+        List<Access> allAccesses = accessService.getAllAccesses();
+        for (Access access : allAccesses) {
+            if (access.getUserId().equals(userId) 
+                    && access.getRequestProtocol().equals(protocol)
+                    && "ATIVO".equals(access.getStatus())) {
+                access.setStatus("REVOGADO");
+            }
+        }
+        objectMapper.writerWithDefaultPrettyPrinter().writeValue(new File(ACCESSES_FILE), allAccesses);
+    }
+
     public Request renewAccess(String userId, String originalProtocol) throws IOException {
         Request originalRequest = findRequestByProtocol(userId, originalProtocol);
         if (originalRequest == null) {
@@ -235,6 +269,17 @@ public class RequestService {
     private void saveRequest(Request request) throws IOException {
         List<Request> requests = getAllRequests();
         requests.add(request);
+        objectMapper.writerWithDefaultPrettyPrinter().writeValue(new File(REQUESTS_FILE), requests);
+    }
+
+    private void updateRequest(Request updatedRequest) throws IOException {
+        List<Request> requests = getAllRequests();
+        for (int i = 0; i < requests.size(); i++) {
+            if (requests.get(i).getProtocol().equals(updatedRequest.getProtocol())) {
+                requests.set(i, updatedRequest);
+                break;
+            }
+        }
         objectMapper.writerWithDefaultPrettyPrinter().writeValue(new File(REQUESTS_FILE), requests);
     }
 

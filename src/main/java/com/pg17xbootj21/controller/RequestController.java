@@ -252,6 +252,53 @@ public class RequestController {
         }
     }
 
+    @PostMapping("/{protocol}/cancel")
+    public ResponseEntity<?> cancelRequest(
+            @RequestHeader("Authorization") String authorization,
+            @PathVariable String protocol,
+            @Valid @RequestBody CancelRequestRequest request) {
+        
+        String token = extractToken(authorization);
+        if (token == null || !sessionService.isValidSession(token)) {
+            ErrorResponse error = new ErrorResponse(
+                "Unauthorized",
+                "Invalid or expired token",
+                HttpStatus.UNAUTHORIZED.value()
+            );
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        }
+
+        String userId = authService.getUserIdByToken(token);
+        if (userId == null) {
+            ErrorResponse error = new ErrorResponse(
+                "Unauthorized",
+                "User not found",
+                HttpStatus.UNAUTHORIZED.value()
+            );
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        }
+
+        try {
+            Request cancelledRequest = requestService.cancelRequest(userId, protocol, request.getReason());
+            RequestDetailsResponse response = toDetails(cancelledRequest);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            ErrorResponse error = new ErrorResponse(
+                "Bad Request",
+                e.getMessage(),
+                HttpStatus.BAD_REQUEST.value()
+            );
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        } catch (Exception e) {
+            ErrorResponse error = new ErrorResponse(
+                "Internal Server Error",
+                e.getMessage(),
+                HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
     private RequestSummaryResponse toSummary(Request request) {
         RequestSummaryResponse summary = new RequestSummaryResponse();
         summary.setProtocol(request.getProtocol());
