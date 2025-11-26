@@ -1,19 +1,47 @@
 package com.pg17xbootj21.model;
 
+import jakarta.persistence.*;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
+@Entity
+@Table(name = "requests")
 public class Request {
+    @Id
     private String protocol;
+    
+    @Column(name = "user_id", nullable = false)
     private String userId;
+    
+    @Column(name = "user_department", nullable = false)
     private String userDepartment;
-    private List<String> modules;
+    
+    @ElementCollection
+    @CollectionTable(name = "request_modules", joinColumns = @JoinColumn(name = "request_protocol"))
+    @Column(name = "module_id")
+    private List<String> modules = new ArrayList<>();
+    
+    @Column(columnDefinition = "TEXT")
     private String justification;
+    
+    @Column(nullable = false)
     private boolean urgent;
+    
+    @Column(nullable = false)
     private String status;
-    private String createdAt;
-    private String expiresAt;
+    
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
+    
+    @Column(name = "expires_at", nullable = false)
+    private Instant expiresAt;
+    
+    @Column(name = "denial_reason", columnDefinition = "TEXT")
     private String denialReason;
-    private List<HistoryEntry> history;
+    
+    @OneToMany(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RequestHistory> history = new ArrayList<>();
 
     public Request() {
     }
@@ -74,19 +102,19 @@ public class Request {
         this.status = status;
     }
 
-    public String getCreatedAt() {
+    public Instant getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(String createdAt) {
+    public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
 
-    public String getExpiresAt() {
+    public Instant getExpiresAt() {
         return expiresAt;
     }
 
-    public void setExpiresAt(String expiresAt) {
+    public void setExpiresAt(Instant expiresAt) {
         this.expiresAt = expiresAt;
     }
 
@@ -98,36 +126,12 @@ public class Request {
         this.denialReason = denialReason;
     }
 
-    public List<HistoryEntry> getHistory() {
+    public List<RequestHistory> getHistory() {
         return history;
     }
 
-    public void setHistory(List<HistoryEntry> history) {
+    public void setHistory(List<RequestHistory> history) {
         this.history = history;
-    }
-
-    public static class HistoryEntry {
-        private String date;
-        private String action;
-
-        public HistoryEntry() {
-        }
-
-        public String getDate() {
-            return date;
-        }
-
-        public void setDate(String date) {
-            this.date = date;
-        }
-
-        public String getAction() {
-            return action;
-        }
-
-        public void setAction(String action) {
-            this.action = action;
-        }
     }
 }
 

@@ -1,13 +1,32 @@
 package com.pg17xbootj21.model;
 
+import jakarta.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 
+@Entity
+@Table(name = "modules")
 public class Module {
+    @Id
     private String id;
+    
+    @Column(nullable = false)
     private String name;
+    
+    @Column(columnDefinition = "TEXT")
     private String description;
-    private List<String> allowedDepartments;
-    private List<String> incompatibleModules;
+    
+    @ElementCollection
+    @CollectionTable(name = "module_allowed_departments", joinColumns = @JoinColumn(name = "module_id"))
+    @Column(name = "department")
+    private List<String> allowedDepartments = new ArrayList<>();
+    
+    @ElementCollection
+    @CollectionTable(name = "module_incompatible_modules", joinColumns = @JoinColumn(name = "module_id"))
+    @Column(name = "incompatible_module_id")
+    private List<String> incompatibleModules = new ArrayList<>();
+    
+    @Column(nullable = false)
     private boolean active;
 
     public Module() {

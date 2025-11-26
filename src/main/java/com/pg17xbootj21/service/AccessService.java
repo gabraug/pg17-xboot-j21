@@ -1,56 +1,41 @@
 package com.pg17xbootj21.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pg17xbootj21.model.Access;
+import com.pg17xbootj21.repository.AccessRepository;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class AccessService {
 
-    private final ObjectMapper objectMapper;
-    private static final String ACCESSES_FILE = System.getProperty("user.dir") + "/data/accesses.json";
+    private final AccessRepository accessRepository;
 
-    public AccessService() {
-        this.objectMapper = new ObjectMapper();
+    public AccessService(AccessRepository accessRepository) {
+        this.accessRepository = accessRepository;
     }
 
-    public List<Access> getAllAccesses() throws IOException {
-        File file = new File(ACCESSES_FILE);
-        if (!file.exists()) {
-            return List.of();
-        }
-        return objectMapper.readValue(file, new TypeReference<List<Access>>() {});
+    public List<Access> getAllAccesses() {
+        return accessRepository.findAll();
     }
 
-    public List<Access> getActiveAccessesByUserId(String userId) throws IOException {
-        return getAllAccesses().stream()
-                .filter(access -> access.getUserId().equals(userId) && "ATIVO".equals(access.getStatus()))
-                .collect(Collectors.toList());
+    public List<Access> getActiveAccessesByUserId(String userId) {
+        return accessRepository.findByUserIdAndStatus(userId, "ATIVO");
     }
 
-    public boolean hasActiveAccess(String userId, String moduleId) throws IOException {
-        return getActiveAccessesByUserId(userId).stream()
-                .anyMatch(access -> access.getModuleId().equals(moduleId));
+    public boolean hasActiveAccess(String userId, String moduleId) {
+        return !accessRepository.findByUserIdAndModuleIdAndStatus(userId, moduleId, "ATIVO").isEmpty();
     }
 
-    public List<String> getActiveModuleIds(String userId) throws IOException {
+    public List<String> getActiveModuleIds(String userId) {
         return getActiveAccessesByUserId(userId).stream()
                 .map(Access::getModuleId)
                 .collect(Collectors.toList());
     }
 
-    public List<Access> getAccessesByProtocol(String userId, String protocol) throws IOException {
-        return getAllAccesses().stream()
-                .filter(access -> access.getUserId().equals(userId) 
-                        && access.getRequestProtocol().equals(protocol)
-                        && "ATIVO".equals(access.getStatus()))
-                .collect(Collectors.toList());
+    public List<Access> getAccessesByProtocol(String userId, String protocol) {
+        return accessRepository.findByUserIdAndRequestProtocolAndStatus(userId, protocol, "ATIVO");
     }
 }
 

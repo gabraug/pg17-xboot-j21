@@ -3,7 +3,6 @@ package com.pg17xbootj21.service;
 import com.pg17xbootj21.model.Module;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.util.List;
 
 @Service
@@ -17,7 +16,7 @@ public class BusinessRuleService {
         this.accessService = accessService;
     }
 
-    public String validateBusinessRules(String userId, String department, List<String> requestedModuleIds) throws IOException {
+    public String validateBusinessRules(String userId, String department, List<String> requestedModuleIds) {
         List<String> activeModuleIds = accessService.getActiveModuleIds(userId);
         int currentActiveModules = activeModuleIds.size();
         int maxModules = "TI".equals(department) ? 10 : 5;
@@ -46,7 +45,7 @@ public class BusinessRuleService {
         return null;
     }
 
-    private boolean hasIncompatibleModulesInRequest(List<String> requestedModuleIds) throws IOException {
+    private boolean hasIncompatibleModulesInRequest(List<String> requestedModuleIds) {
         for (int i = 0; i < requestedModuleIds.size(); i++) {
             String moduleId1 = requestedModuleIds.get(i);
             Module module1 = moduleService.findById(moduleId1).orElse(null);
@@ -69,7 +68,7 @@ public class BusinessRuleService {
         return module.getAllowedDepartments().contains(department);
     }
 
-    private boolean hasIncompatibleModule(List<String> activeModuleIds, Module requestedModule) throws IOException {
+    private boolean hasIncompatibleModule(List<String> activeModuleIds, Module requestedModule) {
         for (String activeModuleId : activeModuleIds) {
             Module activeModule = moduleService.findById(activeModuleId).orElse(null);
             if (activeModule != null) {

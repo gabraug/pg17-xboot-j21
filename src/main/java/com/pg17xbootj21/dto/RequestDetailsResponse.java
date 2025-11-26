@@ -1,7 +1,5 @@
 package com.pg17xbootj21.dto;
 
-import com.pg17xbootj21.model.Request;
-
 import java.util.List;
 
 public class RequestDetailsResponse {
@@ -15,7 +13,7 @@ public class RequestDetailsResponse {
     private String createdAt;
     private String expiresAt;
     private String denialReason;
-    private List<Request.HistoryEntry> history;
+    private List<HistoryEntryResponse> history;
 
     public RequestDetailsResponse() {
     }
@@ -100,11 +98,11 @@ public class RequestDetailsResponse {
         this.denialReason = denialReason;
     }
 
-    public List<Request.HistoryEntry> getHistory() {
+    public List<HistoryEntryResponse> getHistory() {
         return history;
     }
 
-    public void setHistory(List<Request.HistoryEntry> history) {
+    public void setHistory(List<HistoryEntryResponse> history) {
         this.history = history;
     }
 }

@@ -4,7 +4,6 @@ import com.pg17xbootj21.model.User;
 import com.pg17xbootj21.util.PasswordUtil;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.util.UUID;
 
 @Service
@@ -19,13 +18,9 @@ public class AuthService {
     }
 
     public User authenticate(String email, String password) {
-        try {
-            return userService.findByEmail(email)
-                    .filter(user -> PasswordUtil.matches(password, user.getPassword()))
-                    .orElse(null);
-        } catch (IOException e) {
-            throw new RuntimeException("Error loading users", e);
-        }
+        return userService.findByEmail(email)
+                .filter(user -> PasswordUtil.matches(password, user.getPassword()))
+                .orElse(null);
     }
 
     public String createSession(String email) {
@@ -35,17 +30,13 @@ public class AuthService {
     }
 
     public String getUserIdByToken(String token) {
-        try {
-            String email = sessionService.getEmailByToken(token);
-            if (email == null) {
-                return null;
-            }
-            return userService.findByEmail(email)
-                    .map(User::getId)
-                    .orElse(null);
-        } catch (IOException e) {
-            throw new RuntimeException("Error getting user", e);
+        String email = sessionService.getEmailByToken(token);
+        if (email == null) {
+            return null;
         }
+        return userService.findByEmail(email)
+                .map(User::getId)
+                .orElse(null);
     }
 }
 

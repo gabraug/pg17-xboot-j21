@@ -16,7 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -59,7 +58,7 @@ public class ModuleController {
                     .map(this::toResponse)
                     .collect(Collectors.toList());
             return ResponseEntity.ok(responses);
-        } catch (IOException e) {
+        } catch (Exception e) {
             ErrorResponse error = new ErrorResponse(
                 "Internal Server Error",
                 e.getMessage(),

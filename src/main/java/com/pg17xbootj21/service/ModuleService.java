@@ -1,40 +1,30 @@
 package com.pg17xbootj21.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pg17xbootj21.model.Module;
+import com.pg17xbootj21.repository.ModuleRepository;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class ModuleService {
 
-    private final ObjectMapper objectMapper;
-    private static final String MODULES_FILE = System.getProperty("user.dir") + "/data/modules.json";
+    private final ModuleRepository moduleRepository;
 
-    public ModuleService() {
-        this.objectMapper = new ObjectMapper();
+    public ModuleService(ModuleRepository moduleRepository) {
+        this.moduleRepository = moduleRepository;
     }
 
-    public List<Module> getAllModules() throws IOException {
-        File file = new File(MODULES_FILE);
-        if (!file.exists()) {
-            throw new RuntimeException("Modules file not found: " + MODULES_FILE);
-        }
-        return objectMapper.readValue(file, new TypeReference<List<Module>>() {});
+    public List<Module> getAllModules() {
+        return moduleRepository.findAll();
     }
 
-    public Optional<Module> findById(String moduleId) throws IOException {
-        return getAllModules().stream()
-                .filter(module -> module.getId().equals(moduleId))
-                .findFirst();
+    public Optional<Module> findById(String moduleId) {
+        return moduleRepository.findById(moduleId);
     }
 
-    public boolean isModuleActive(String moduleId) throws IOException {
+    public boolean isModuleActive(String moduleId) {
         return findById(moduleId)
                 .map(Module::isActive)
                 .orElse(false);

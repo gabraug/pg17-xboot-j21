@@ -10,11 +10,20 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class SessionService {
 
-    private static final int TOKEN_EXPIRATION_MINUTES = 15;
+    private static final long DEFAULT_TOKEN_EXPIRATION_SECONDS = 15 * 60L;
     private final Map<String, SessionInfo> sessions = new ConcurrentHashMap<>();
+    private final long tokenExpirationSeconds;
+
+    public SessionService() {
+        this(DEFAULT_TOKEN_EXPIRATION_SECONDS);
+    }
+
+    public SessionService(long tokenExpirationSeconds) {
+        this.tokenExpirationSeconds = tokenExpirationSeconds;
+    }
 
     public void createSession(String token, String email) {
-        Instant expiresAt = Instant.now().plusSeconds(TOKEN_EXPIRATION_MINUTES * 60L);
+        Instant expiresAt = Instant.now().plusSeconds(tokenExpirationSeconds);
         sessions.put(token, new SessionInfo(email, expiresAt));
     }
 

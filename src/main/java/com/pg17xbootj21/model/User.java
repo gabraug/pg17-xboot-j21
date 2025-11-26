@@ -1,10 +1,23 @@
 package com.pg17xbootj21.model;
 
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "users")
 public class User {
+    @Id
     private String id;
+    
+    @Column(nullable = false, unique = true)
     private String email;
+    
+    @Column(nullable = false)
     private String password;
+    
+    @Column(nullable = false)
     private String name;
+    
+    @Column(nullable = false)
     private String department;
 
     public User() {

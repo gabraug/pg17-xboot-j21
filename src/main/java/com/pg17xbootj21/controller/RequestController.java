@@ -17,9 +17,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.pg17xbootj21.dto.HistoryEntryResponse;
 
 @RestController
 @RequestMapping("/requests")
@@ -228,7 +228,7 @@ public class RequestController {
             );
             
             return ResponseEntity.ok(response);
-        } catch (IOException e) {
+        } catch (Exception e) {
             ErrorResponse error = new ErrorResponse(
                 "Internal Server Error",
                 e.getMessage(),
@@ -303,7 +303,7 @@ public class RequestController {
 
             RequestDetailsResponse response = toDetails(request);
             return ResponseEntity.ok(response);
-        } catch (IOException e) {
+        } catch (Exception e) {
             ErrorResponse error = new ErrorResponse(
                 "Internal Server Error",
                 e.getMessage(),
@@ -460,8 +460,8 @@ public class RequestController {
         summary.setStatus(request.getStatus());
         summary.setJustification(request.getJustification());
         summary.setUrgent(request.isUrgent());
-        summary.setCreatedAt(request.getCreatedAt());
-        summary.setExpiresAt(request.getExpiresAt());
+        summary.setCreatedAt(request.getCreatedAt() != null ? request.getCreatedAt().toString() : null);
+        summary.setExpiresAt(request.getExpiresAt() != null ? request.getExpiresAt().toString() : null);
         summary.setDenialReason(request.getDenialReason());
         return summary;
     }
@@ -475,10 +475,22 @@ public class RequestController {
         details.setJustification(request.getJustification());
         details.setUrgent(request.isUrgent());
         details.setStatus(request.getStatus());
-        details.setCreatedAt(request.getCreatedAt());
-        details.setExpiresAt(request.getExpiresAt());
+        details.setCreatedAt(request.getCreatedAt() != null ? request.getCreatedAt().toString() : null);
+        details.setExpiresAt(request.getExpiresAt() != null ? request.getExpiresAt().toString() : null);
         details.setDenialReason(request.getDenialReason());
-        details.setHistory(request.getHistory());
+        
+        if (request.getHistory() != null) {
+            List<HistoryEntryResponse> historyEntries = request.getHistory().stream()
+                    .map(h -> {
+                        HistoryEntryResponse entry = new HistoryEntryResponse();
+                        entry.setDate(h.getDate() != null ? h.getDate().toString() : null);
+                        entry.setAction(h.getAction());
+                        return entry;
+                    })
+                    .collect(Collectors.toList());
+            details.setHistory(historyEntries);
+        }
+        
         return details;
     }
 
