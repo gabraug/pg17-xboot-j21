@@ -1,8 +1,6 @@
 package com.pg17xbootj21.controller;
 
-import com.pg17xbootj21.dto.CreateRequestRequest;
-import com.pg17xbootj21.dto.CreateRequestResponse;
-import com.pg17xbootj21.dto.ErrorResponse;
+import com.pg17xbootj21.dto.*;
 import com.pg17xbootj21.model.Request;
 import com.pg17xbootj21.service.AuthService;
 import com.pg17xbootj21.service.RequestService;
@@ -11,6 +9,10 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/requests")
@@ -85,6 +87,77 @@ public class RequestController {
             );
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
+    }
+
+    @GetMapping
+    public ResponseEntity<?> searchRequests(
+            @RequestHeader("Authorization") String authorization,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) Boolean urgent,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        
+        String token = extractToken(authorization);
+        if (token == null || !sessionService.isValidSession(token)) {
+            ErrorResponse error = new ErrorResponse(
+                "Unauthorized",
+                "Invalid or expired token",
+                HttpStatus.UNAUTHORIZED.value()
+            );
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        }
+
+        String userId = authService.getUserIdByToken(token);
+        if (userId == null) {
+            ErrorResponse error = new ErrorResponse(
+                "Unauthorized",
+                "User not found",
+                HttpStatus.UNAUTHORIZED.value()
+            );
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        }
+
+        try {
+            List<Request> requests = requestService.searchRequests(userId, search, status, startDate, endDate, urgent);
+            
+            int totalElements = requests.size();
+            int fromIndex = page * size;
+            int toIndex = Math.min(fromIndex + size, totalElements);
+            List<Request> pagedRequests = requests.subList(fromIndex, toIndex);
+            
+            List<RequestSummaryResponse> summaries = pagedRequests.stream()
+                    .map(this::toSummary)
+                    .collect(Collectors.toList());
+            
+            PagedResponse<RequestSummaryResponse> response = new PagedResponse<>(
+                summaries, page, size, totalElements
+            );
+            
+            return ResponseEntity.ok(response);
+        } catch (IOException e) {
+            ErrorResponse error = new ErrorResponse(
+                "Internal Server Error",
+                e.getMessage(),
+                HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    private RequestSummaryResponse toSummary(Request request) {
+        RequestSummaryResponse summary = new RequestSummaryResponse();
+        summary.setProtocol(request.getProtocol());
+        summary.setModules(request.getModules());
+        summary.setStatus(request.getStatus());
+        summary.setJustification(request.getJustification());
+        summary.setUrgent(request.isUrgent());
+        summary.setCreatedAt(request.getCreatedAt());
+        summary.setExpiresAt(request.getExpiresAt());
+        summary.setDenialReason(request.getDenialReason());
+        return summary;
     }
 
     private String extractToken(String authorization) {

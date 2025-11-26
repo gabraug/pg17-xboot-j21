@@ -168,5 +168,71 @@ public class RequestService {
         entry.setAction(action);
         return entry;
     }
+
+    public List<Request> searchRequests(String userId, String search, String status, String startDate, String endDate, Boolean urgent) throws IOException {
+        List<Request> allRequests = getAllRequests();
+        
+        return allRequests.stream()
+                .filter(req -> req.getUserId().equals(userId))
+                .filter(req -> matchesSearch(req, search))
+                .filter(req -> matchesStatus(req, status))
+                .filter(req -> matchesDateRange(req, startDate, endDate))
+                .filter(req -> matchesUrgent(req, urgent))
+                .sorted((r1, r2) -> r2.getCreatedAt().compareTo(r1.getCreatedAt()))
+                .collect(Collectors.toList());
+    }
+
+    private boolean matchesSearch(Request request, String search) {
+        if (search == null || search.trim().isEmpty()) {
+            return true;
+        }
+        String lowerSearch = search.toLowerCase();
+        if (request.getProtocol() != null && request.getProtocol().toLowerCase().contains(lowerSearch)) {
+            return true;
+        }
+        if (request.getModules() != null) {
+            for (String moduleId : request.getModules()) {
+                try {
+                    Module module = moduleService.findById(moduleId).orElse(null);
+                    if (module != null && module.getName().toLowerCase().contains(lowerSearch)) {
+                        return true;
+                    }
+                } catch (IOException e) {
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean matchesStatus(Request request, String status) {
+        if (status == null || status.trim().isEmpty()) {
+            return true;
+        }
+        return status.equalsIgnoreCase(request.getStatus());
+    }
+
+    private boolean matchesDateRange(Request request, String startDate, String endDate) {
+        if (startDate == null && endDate == null) {
+            return true;
+        }
+        String createdAt = request.getCreatedAt();
+        if (createdAt == null) {
+            return false;
+        }
+        if (startDate != null && createdAt.compareTo(startDate) < 0) {
+            return false;
+        }
+        if (endDate != null && createdAt.compareTo(endDate) > 0) {
+            return false;
+        }
+        return true;
+    }
+
+    private boolean matchesUrgent(Request request, Boolean urgent) {
+        if (urgent == null) {
+            return true;
+        }
+        return request.isUrgent() == urgent;
+    }
 }
 
