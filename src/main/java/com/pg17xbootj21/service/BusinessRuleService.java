@@ -1,6 +1,5 @@
 package com.pg17xbootj21.service;
 
-import com.pg17xbootj21.model.Access;
 import com.pg17xbootj21.model.Module;
 import org.springframework.stereotype.Service;
 
@@ -36,10 +35,18 @@ public class BusinessRuleService {
             }
         }
 
+        if (hasIncompatibleModulesInRequest(requestedModuleIds)) {
+            return "Módulo incompatível com outro módulo já ativo em seu perfil";
+        }
+
         if (currentActiveModules + requestedModuleIds.size() > maxModules) {
             return "Limite de módulos ativos atingido";
         }
 
+        return null;
+    }
+
+    private boolean hasIncompatibleModulesInRequest(List<String> requestedModuleIds) throws IOException {
         for (int i = 0; i < requestedModuleIds.size(); i++) {
             String moduleId1 = requestedModuleIds.get(i);
             Module module1 = moduleService.findById(moduleId1).orElse(null);
@@ -47,13 +54,12 @@ public class BusinessRuleService {
                 for (int j = i + 1; j < requestedModuleIds.size(); j++) {
                     String moduleId2 = requestedModuleIds.get(j);
                     if (module1.getIncompatibleModules().contains(moduleId2)) {
-                        return "Módulo incompatível com outro módulo já ativo em seu perfil";
+                        return true;
                     }
                 }
             }
         }
-
-        return null;
+        return false;
     }
 
     private boolean isDepartmentAllowed(String department, Module module) {

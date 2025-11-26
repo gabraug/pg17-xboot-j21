@@ -105,7 +105,7 @@ public class RequestService {
         }
 
         if (isGenericJustification(justification)) {
-            throw new RuntimeException("Justification contains only generic text");
+            throw new RuntimeException("Justificativa insuficiente ou genérica");
         }
     }
 
