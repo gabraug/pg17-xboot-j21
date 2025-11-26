@@ -30,7 +30,7 @@ public class RequestController {
 
     @PostMapping
     public ResponseEntity<?> createRequest(
-            @RequestHeader("Authorization") String authorization,
+            @RequestHeader(value = "Authorization", required = false) String authorization,
             @Valid @RequestBody CreateRequestRequest request) {
         
         String token = extractToken(authorization);
@@ -109,7 +109,7 @@ public class RequestController {
 
     @GetMapping
     public ResponseEntity<?> searchRequests(
-            @RequestHeader("Authorization") String authorization,
+            @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String startDate,
@@ -215,7 +215,7 @@ public class RequestController {
 
     @GetMapping("/{protocol}")
     public ResponseEntity<?> getRequestDetails(
-            @RequestHeader("Authorization") String authorization,
+            @RequestHeader(value = "Authorization", required = false) String authorization,
             @PathVariable String protocol) {
         
         if (protocol == null || protocol.trim().isEmpty()) {
@@ -281,7 +281,7 @@ public class RequestController {
 
     @PostMapping("/renew")
     public ResponseEntity<?> renewAccess(
-            @RequestHeader("Authorization") String authorization,
+            @RequestHeader(value = "Authorization", required = false) String authorization,
             @Valid @RequestBody RenewAccessRequest request) {
         
         String token = extractToken(authorization);
@@ -338,7 +338,7 @@ public class RequestController {
 
     @PostMapping("/{protocol}/cancel")
     public ResponseEntity<?> cancelRequest(
-            @RequestHeader("Authorization") String authorization,
+            @RequestHeader(value = "Authorization", required = false) String authorization,
             @PathVariable String protocol,
             @Valid @RequestBody CancelRequestRequest request) {
         

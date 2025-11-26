@@ -26,7 +26,7 @@ public class ModuleController {
     }
 
     @GetMapping
-    public ResponseEntity<?> listModules(@RequestHeader("Authorization") String authorization) {
+    public ResponseEntity<?> listModules(@RequestHeader(value = "Authorization", required = false) String authorization) {
         String token = extractToken(authorization);
         if (token == null || !sessionService.isValidSession(token)) {
             ErrorResponse error = new ErrorResponse(
