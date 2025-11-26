@@ -139,6 +139,99 @@ public class RequestService {
                 .orElse(null);
     }
 
+    public Request renewAccess(String userId, String originalProtocol) throws IOException {
+        Request originalRequest = findRequestByProtocol(userId, originalProtocol);
+        if (originalRequest == null) {
+            throw new RuntimeException("Request not found");
+        }
+
+        if (!"ATIVO".equals(originalRequest.getStatus())) {
+            throw new RuntimeException("Request status must be ATIVO");
+        }
+
+        List<Access> accesses = accessService.getAccessesByProtocol(userId, originalProtocol);
+        if (accesses.isEmpty()) {
+            throw new RuntimeException("No active accesses found for this request");
+        }
+
+        Access firstAccess = accesses.get(0);
+        String expiresAt = firstAccess.getExpiresAt();
+        long daysUntilExpiration = calculateDaysUntilExpiration(expiresAt);
+        
+        if (daysUntilExpiration >= 30) {
+            throw new RuntimeException("Access can only be renewed when less than 30 days until expiration");
+        }
+
+        User user = userService.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<String> moduleIds = originalRequest.getModules();
+        String justification = "Renovação de acesso - Solicitação original: " + originalProtocol;
+
+        String denialReason = businessRuleService.validateBusinessRules(userId, user.getDepartment(), moduleIds);
+        String status = denialReason == null ? "ATIVO" : "NEGADO";
+
+        String newProtocol = generateProtocol();
+        String createdAt = Instant.now().toString();
+        String newExpiresAt = Instant.now().plusSeconds(180 * 24 * 60 * 60L).toString();
+
+        Request newRequest = new Request();
+        newRequest.setProtocol(newProtocol);
+        newRequest.setUserId(userId);
+        newRequest.setUserDepartment(user.getDepartment());
+        newRequest.setModules(moduleIds);
+        newRequest.setJustification(justification);
+        newRequest.setUrgent(originalRequest.isUrgent());
+        newRequest.setStatus(status);
+        newRequest.setCreatedAt(createdAt);
+        newRequest.setExpiresAt(newExpiresAt);
+        newRequest.setDenialReason(denialReason);
+
+        List<Request.HistoryEntry> history = new ArrayList<>();
+        history.add(createHistoryEntry(createdAt, "CREATED"));
+        history.add(createHistoryEntry(createdAt, "RENEWAL"));
+        if ("ATIVO".equals(status)) {
+            history.add(createHistoryEntry(createdAt, "APPROVED"));
+        } else {
+            history.add(createHistoryEntry(createdAt, "DENIED"));
+        }
+        newRequest.setHistory(history);
+
+        saveRequest(newRequest);
+
+        if ("ATIVO".equals(status)) {
+            revokeOldAccesses(accesses);
+            createAccesses(userId, moduleIds, newProtocol, createdAt, newExpiresAt);
+        }
+
+        return newRequest;
+    }
+
+    private long calculateDaysUntilExpiration(String expiresAt) {
+        try {
+            Instant expiration = Instant.parse(expiresAt);
+            Instant now = Instant.now();
+            return (expiration.toEpochMilli() - now.toEpochMilli()) / (1000 * 60 * 60 * 24);
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private void revokeOldAccesses(List<Access> accesses) throws IOException {
+        List<Access> allAccesses = accessService.getAllAccesses();
+        for (Access oldAccess : accesses) {
+            for (Access access : allAccesses) {
+                if (access.getUserId().equals(oldAccess.getUserId()) 
+                        && access.getModuleId().equals(oldAccess.getModuleId())
+                        && access.getRequestProtocol().equals(oldAccess.getRequestProtocol())
+                        && "ATIVO".equals(access.getStatus())) {
+                    access.setStatus("REVOGADO");
+                }
+            }
+        }
+        objectMapper.writerWithDefaultPrettyPrinter().writeValue(new File(ACCESSES_FILE), allAccesses);
+    }
+
     private void saveRequest(Request request) throws IOException {
         List<Request> requests = getAllRequests();
         requests.add(request);

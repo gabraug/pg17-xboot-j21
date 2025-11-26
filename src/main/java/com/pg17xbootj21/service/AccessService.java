@@ -44,5 +44,13 @@ public class AccessService {
                 .map(Access::getModuleId)
                 .collect(Collectors.toList());
     }
+
+    public List<Access> getAccessesByProtocol(String userId, String protocol) throws IOException {
+        return getAllAccesses().stream()
+                .filter(access -> access.getUserId().equals(userId) 
+                        && access.getRequestProtocol().equals(protocol)
+                        && "ATIVO".equals(access.getStatus()))
+                .collect(Collectors.toList());
+    }
 }
 

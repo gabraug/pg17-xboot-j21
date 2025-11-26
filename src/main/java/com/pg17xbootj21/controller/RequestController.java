@@ -195,6 +195,63 @@ public class RequestController {
         }
     }
 
+    @PostMapping("/renew")
+    public ResponseEntity<?> renewAccess(
+            @RequestHeader("Authorization") String authorization,
+            @Valid @RequestBody RenewAccessRequest request) {
+        
+        String token = extractToken(authorization);
+        if (token == null || !sessionService.isValidSession(token)) {
+            ErrorResponse error = new ErrorResponse(
+                "Unauthorized",
+                "Invalid or expired token",
+                HttpStatus.UNAUTHORIZED.value()
+            );
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        }
+
+        String userId = authService.getUserIdByToken(token);
+        if (userId == null) {
+            ErrorResponse error = new ErrorResponse(
+                "Unauthorized",
+                "User not found",
+                HttpStatus.UNAUTHORIZED.value()
+            );
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        }
+
+        try {
+            Request renewedRequest = requestService.renewAccess(userId, request.getRequestProtocol());
+
+            CreateRequestResponse response = new CreateRequestResponse();
+            response.setProtocol(renewedRequest.getProtocol());
+            response.setStatus(renewedRequest.getStatus());
+
+            if ("ATIVO".equals(renewedRequest.getStatus())) {
+                response.setMessage("Solicitação criada com sucesso! Protocolo: " + renewedRequest.getProtocol() + ". Seus acessos já estão disponíveis!");
+            } else {
+                response.setDenialReason(renewedRequest.getDenialReason());
+                response.setMessage("Solicitação negada. Motivo: " + renewedRequest.getDenialReason());
+            }
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (RuntimeException e) {
+            ErrorResponse error = new ErrorResponse(
+                "Bad Request",
+                e.getMessage(),
+                HttpStatus.BAD_REQUEST.value()
+            );
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        } catch (Exception e) {
+            ErrorResponse error = new ErrorResponse(
+                "Internal Server Error",
+                e.getMessage(),
+                HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
     private RequestSummaryResponse toSummary(Request request) {
         RequestSummaryResponse summary = new RequestSummaryResponse();
         summary.setProtocol(request.getProtocol());
