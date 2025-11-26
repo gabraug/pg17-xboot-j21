@@ -25,21 +25,30 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
-        User user = authService.authenticate(request.getEmail(), request.getPassword());
-        
-        if (user == null) {
-            ErrorResponse error = new ErrorResponse(
-                "Unauthorized",
-                "Invalid email or password",
-                HttpStatus.UNAUTHORIZED.value()
-            );
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
-        }
+        try {
+            User user = authService.authenticate(request.getEmail(), request.getPassword());
+            
+            if (user == null) {
+                ErrorResponse error = new ErrorResponse(
+                    "Unauthorized",
+                    "Invalid email or password",
+                    HttpStatus.UNAUTHORIZED.value()
+                );
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+            }
 
-        String token = authService.createSession(request.getEmail());
-        LoginResponse response = new LoginResponse(token, user.getName(), user.getEmail());
-        
-        return ResponseEntity.ok(response);
+            String token = authService.createSession(request.getEmail());
+            LoginResponse response = new LoginResponse(token, user.getName(), user.getEmail());
+            
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            ErrorResponse error = new ErrorResponse(
+                "Internal Server Error",
+                e.getMessage(),
+                HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
     }
 }
 

@@ -53,6 +53,24 @@ public class RequestController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
         }
 
+        if (request.getModules() == null || request.getModules().isEmpty()) {
+            ErrorResponse error = new ErrorResponse(
+                "Bad Request",
+                "At least one module is required",
+                HttpStatus.BAD_REQUEST.value()
+            );
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
+        
+        if (request.getModules().size() > 3) {
+            ErrorResponse error = new ErrorResponse(
+                "Bad Request",
+                "Must select between 1 and 3 modules",
+                HttpStatus.BAD_REQUEST.value()
+            );
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
+
         try {
             Request createdRequest = requestService.createRequest(
                 userId,
@@ -99,6 +117,54 @@ public class RequestController {
             @RequestParam(required = false) Boolean urgent,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
+        
+        if (page < 0) {
+            ErrorResponse error = new ErrorResponse(
+                "Bad Request",
+                "Page number must be greater than or equal to 0",
+                HttpStatus.BAD_REQUEST.value()
+            );
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
+        
+        if (size < 1 || size > 100) {
+            ErrorResponse error = new ErrorResponse(
+                "Bad Request",
+                "Page size must be between 1 and 100",
+                HttpStatus.BAD_REQUEST.value()
+            );
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
+        
+        if (status != null && !status.isEmpty()) {
+            String upperStatus = status.toUpperCase();
+            if (!upperStatus.equals("ATIVO") && !upperStatus.equals("NEGADO") && !upperStatus.equals("CANCELADO")) {
+                ErrorResponse error = new ErrorResponse(
+                    "Bad Request",
+                    "Status must be one of: ATIVO, NEGADO, CANCELADO",
+                    HttpStatus.BAD_REQUEST.value()
+                );
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+            }
+        }
+        
+        if (startDate != null && !startDate.isEmpty() && !isValidDateFormat(startDate)) {
+            ErrorResponse error = new ErrorResponse(
+                "Bad Request",
+                "Invalid start date format. Expected format: YYYY-MM-DD",
+                HttpStatus.BAD_REQUEST.value()
+            );
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
+        
+        if (endDate != null && !endDate.isEmpty() && !isValidDateFormat(endDate)) {
+            ErrorResponse error = new ErrorResponse(
+                "Bad Request",
+                "Invalid end date format. Expected format: YYYY-MM-DD",
+                HttpStatus.BAD_REQUEST.value()
+            );
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
         
         String token = extractToken(authorization);
         if (token == null || !sessionService.isValidSession(token)) {
@@ -151,6 +217,24 @@ public class RequestController {
     public ResponseEntity<?> getRequestDetails(
             @RequestHeader("Authorization") String authorization,
             @PathVariable String protocol) {
+        
+        if (protocol == null || protocol.trim().isEmpty()) {
+            ErrorResponse error = new ErrorResponse(
+                "Bad Request",
+                "Protocol is required",
+                HttpStatus.BAD_REQUEST.value()
+            );
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
+        
+        if (!protocol.matches("^SOL-\\d{8}-\\d{4}$")) {
+            ErrorResponse error = new ErrorResponse(
+                "Bad Request",
+                "Invalid protocol format. Expected format: SOL-YYYYMMDD-NNNN",
+                HttpStatus.BAD_REQUEST.value()
+            );
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
         
         String token = extractToken(authorization);
         if (token == null || !sessionService.isValidSession(token)) {
@@ -258,6 +342,24 @@ public class RequestController {
             @PathVariable String protocol,
             @Valid @RequestBody CancelRequestRequest request) {
         
+        if (protocol == null || protocol.trim().isEmpty()) {
+            ErrorResponse error = new ErrorResponse(
+                "Bad Request",
+                "Protocol is required",
+                HttpStatus.BAD_REQUEST.value()
+            );
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
+        
+        if (!protocol.matches("^SOL-\\d{8}-\\d{4}$")) {
+            ErrorResponse error = new ErrorResponse(
+                "Bad Request",
+                "Invalid protocol format. Expected format: SOL-YYYYMMDD-NNNN",
+                HttpStatus.BAD_REQUEST.value()
+            );
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
+        
         String token = extractToken(authorization);
         if (token == null || !sessionService.isValidSession(token)) {
             ErrorResponse error = new ErrorResponse(
@@ -333,6 +435,15 @@ public class RequestController {
             return authorization.substring(7);
         }
         return null;
+    }
+
+    private boolean isValidDateFormat(String date) {
+        try {
+            java.time.LocalDate.parse(date);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
 
