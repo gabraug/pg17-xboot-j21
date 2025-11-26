@@ -1,17 +1,21 @@
 package com.pg17xbootj21.model;
 
 public class User {
+    private String id;
     private String email;
     private String password;
     private String name;
+    private String department;
 
     public User() {
     }
 
-    public User(String email, String password, String name) {
-        this.email = email;
-        this.password = password;
-        this.name = name;
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getEmail() {
@@ -36,6 +40,14 @@ public class User {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getDepartment() {
+        return department;
+    }
+
+    public void setDepartment(String department) {
+        this.department = department;
     }
 }
 

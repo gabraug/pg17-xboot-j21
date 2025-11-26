@@ -1,35 +1,27 @@
 package com.pg17xbootj21.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pg17xbootj21.model.User;
 import com.pg17xbootj21.util.PasswordUtil;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.List;
 import java.util.UUID;
 
 @Service
 public class AuthService {
 
-    private final ObjectMapper objectMapper;
     private final SessionService sessionService;
-    private static final String USERS_FILE = System.getProperty("user.dir") + "/data/users.json";
+    private final UserService userService;
 
-    public AuthService(SessionService sessionService) {
-        this.objectMapper = new ObjectMapper();
+    public AuthService(SessionService sessionService, UserService userService) {
         this.sessionService = sessionService;
+        this.userService = userService;
     }
 
     public User authenticate(String email, String password) {
         try {
-            List<User> users = loadUsers();
-            return users.stream()
-                    .filter(user -> user.getEmail().equals(email) 
-                            && PasswordUtil.matches(password, user.getPassword()))
-                    .findFirst()
+            return userService.findByEmail(email)
+                    .filter(user -> PasswordUtil.matches(password, user.getPassword()))
                     .orElse(null);
         } catch (IOException e) {
             throw new RuntimeException("Error loading users", e);
@@ -42,12 +34,18 @@ public class AuthService {
         return token;
     }
 
-    private List<User> loadUsers() throws IOException {
-        File file = new File(USERS_FILE);
-        if (!file.exists()) {
-            throw new RuntimeException("Users file not found: " + USERS_FILE);
+    public String getUserIdByToken(String token) {
+        try {
+            String email = sessionService.getEmailByToken(token);
+            if (email == null) {
+                return null;
+            }
+            return userService.findByEmail(email)
+                    .map(User::getId)
+                    .orElse(null);
+        } catch (IOException e) {
+            throw new RuntimeException("Error getting user", e);
         }
-        return objectMapper.readValue(file, new TypeReference<List<User>>() {});
     }
 }
 
